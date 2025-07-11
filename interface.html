@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Galaxy Think</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script defer="" src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style type="text/tailwindcss">
+    @layer utilities {
+      .transition-width {
+        transition: width 0.3s ease-in-out;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-800 text-white font-sans">
+<div class="flex h-screen" x-data="{ 
+    isGraphOpen: false, 
+    isModelModalOpen: false, 
+    isInstructionsOpen: false, 
+    isTtsPreviewOpen: false, 
+    isAudioPlaying: false, 
+    isDownloading: false,
+    chats: [
+        { id: 'js_promise', title: 'Promesa JS', tabs: ['promise', 'typescript', 'autoprogramacion', 'lisp'], open: true, currentTab: 'promise' },
+        { id: 'copilot', title: 'Límites Copilot VS', tabs: [] },
+        { id: 'zohar', title: 'Entendiendo el Zóhar', tabs: [] },
+        { id: 'energy', title: 'Energía en el universo primitivo', tabs: [] },
+        { id: 'vibration', title: 'Modos de vibración cuantizados', tabs: [] },
+        { id: 'error', title: 'Error solicitud cancelada', tabs: [] },
+        { id: 'raramuri', title: 'Cantos rarámuri rituales', tabs: [] },
+        { id: 'dirac', title: 'Dios y delta de Dirac', tabs: [] }
+    ],
+    currentChatId: 'js_promise',
+    searchQuery: '',
+    get filteredChats() {
+        if (this.searchQuery === '') {
+            return this.chats;
+        }
+        return this.chats.filter(chat =&gt; 
+            chat.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+        );
+    },
+    get currentChat() {
+        return this.chats.find(c =&gt; c.id === this.currentChatId);
+    },
+    createNewChat(userMessage) {
+        const newChatId = 'chat_' + Date.now();
+        const newChat = {
+            id: newChatId,
+            title: userMessage.substring(0, 30) + (userMessage.length &gt; 30 ? '...' : ''),
+            tabs: [],
+            userMessage: userMessage,
+            isNew: true
+        };
+        this.chats.unshift(newChat);
+        this.currentChatId = newChatId;
+    }
+}">
+<div class="bg-gray-900 w-64 p-4 flex flex-col flex-shrink-0">
+<div class="flex-shrink-0">
+<div class="flex items-center justify-between mb-6">
+<h1 class="text-xl font-bold">Galaxy Think</h1>
+</div>
+<div class="mb-4">
+<button @click="currentChatId = null" class="flex items-center w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg">
+<span class="material-icons mr-2">add</span>
+                        Nuevo chat
+                    </button>
+</div>
+<div class="relative mb-4">
+<span class="material-icons absolute left-3 top-2.5 text-gray-400">search</span>
+<input class="bg-gray-800 border border-gray-700 rounded-lg w-full pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Buscar chats" type="text" x-model="searchQuery"/>
+</div>
+<nav>
+<ul>
+<li class="mb-2">
+<a class="flex items-center text-gray-300 hover:bg-gray-700 py-2 px-4 rounded-lg" href="#">
+<span class="material-icons mr-3">collections_bookmark</span>
+                                Biblioteca
+                            </a>
+</li>
+<li class="mb-2">
+<button @click="isModelModalOpen = true" class="flex items-center text-gray-300 hover:bg-gray-700 py-2 px-4 rounded-lg w-full text-left">
+<span class="material-icons mr-3">model_training</span>
+                                Model
+                            </button>
+</li>
+</ul>
+</nav>
+</div>
+<div class="mt-6 flex-grow overflow-y-auto">
+<h2 class="text-xs text-gray-500 uppercase font-bold mb-3 px-4">Chats</h2>
+<ul>
+<template :key="chat.id" x-for="chat in filteredChats">
+<li class="mb-1">
+<a :class="{'bg-gray-700': currentChatId === chat.id}" @click.prevent="currentChatId = chat.id; if(chat.tabs.length &gt; 0) { chat.open = !chat.open }" class="flex items-center justify-between text-gray-300 hover:bg-gray-700 py-2 px-4 rounded-lg cursor-pointer" href="#">
+<span class="truncate" x-text="chat.title"></span>
+<span :class="{'rotate-90': chat.open}" class="material-icons text-sm transition-transform" x-show="chat.tabs.length &gt; 0">chevron_right</span>
+</a>
+<div class="pl-4 mt-1 space-y-1" x-show="chat.open &amp;&amp; chat.tabs.length &gt; 0" x-transition="">
+<template :key="tab" x-for="tab in chat.tabs">
+<a :class="{'bg-gray-700': chat.currentTab === tab}" @click.prevent="currentChatId = chat.id; chat.currentTab = tab" class="block text-gray-400 hover:bg-gray-700 py-1 px-3 rounded-lg truncate text-sm cursor-pointer capitalize" href="#" x-text="tab.replace('_', ' ').replace('autoprogramacion', 'Autoprogramación')"></a>
+</template>
+</div>
+</li>
+</template>
+</ul>
+</div>
+</div>
+<div class="flex-1 flex flex-col relative">
+<header class="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
+<div class="flex items-center space-x-4">
+<span class="text-sm text-gray-400">Memoria guardada completa</span>
+<span class="material-icons text-gray-400">info</span>
+</div>
+<div class="flex items-center space-x-4">
+<button @click="isGraphOpen = !isGraphOpen" class="text-gray-400 hover:text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+<span class="material-icons">hub</span>
+</button>
+<button class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+<span class="material-icons mr-2">add</span>
+                        Obtener Plus
+          </button>
+<div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center font-bold">H</div>
+</div>
+</header>
+<main class="flex-1 p-6 overflow-y-auto">
+<div class="max-w-4xl mx-auto">
+<div x-show="!currentChatId" x-transition="">
+<div class="text-center pt-20">
+<div class="w-16 h-16 rounded-full bg-teal-500 flex items-center justify-center mx-auto mb-4">
+<span class="material-icons text-white text-4xl">psychology</span>
+</div>
+<p class="text-2xl font-semibold">¿En qué te gustaría profundizar hoy?</p>
+</div>
+</div>
+<template x-if="currentChat &amp;&amp; currentChat.isNew">
+<div x-transition="">
+<div class="flex items-start space-x-4 mb-8">
+<div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center font-bold flex-shrink-0">H</div>
+<p class="pt-1" x-text="currentChat.userMessage"></p>
+</div>
+<div class="flex items-start space-x-4 mb-8">
+<div class="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
+<span class="material-icons text-white">psychology</span>
+</div>
+<div class="flex-1">
+<div class="border-b border-gray-700 pb-6 mb-6">
+<h2 class="text-xl font-semibold mb-3">Respuesta básica</h2>
+<p class="text-gray-300 leading-relaxed mb-4">
+                                    Esta es una respuesta básica a tu pregunta. Aquí hay algunas secciones y funciones para explorar más a fondo.
+                                </p>
+<div class="flex space-x-2">
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">model_training</span>
+                                        Profundizar
+                                    </button>
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">forum</span>
+                                        Hilo
+                                    </button>
+</div>
+</div>
+<div class="border-b border-gray-700 pb-6 mb-6">
+<h3 class="text-lg font-semibold mb-3">Sección 1</h3>
+<p class="text-gray-300 leading-relaxed mb-4">Contenido de la primera sección.</p>
+<div class="flex space-x-2">
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">model_training</span>
+                                        Profundizar
+                                    </button>
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">forum</span>
+                                        Hilo
+                                    </button>
+</div>
+</div>
+<div>
+<h3 class="text-lg font-semibold mb-3">Sección 2</h3>
+<p class="text-gray-300 leading-relaxed mb-4">Contenido de la segunda sección.</p>
+<div class="flex space-x-2">
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">model_training</span>
+                                        Profundizar
+                                    </button>
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">forum</span>
+                                        Hilo
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</template>
+<template x-if="currentChat &amp;&amp; !currentChat.isNew">
+<div x-show="currentChatId === currentChat.id" x-transition="">
+<div x-show="currentChat.tabs.length &gt; 0">
+<div class="flex space-x-2 mb-6 border-b border-gray-700">
+<template :key="tab" x-for="tab in currentChat.tabs">
+<button :class="{'bg-gray-700 text-white border-blue-500': currentChat.currentTab === tab, 'text-gray-400 border-transparent': currentChat.currentTab !== tab}" @click="currentChat.currentTab = tab" class="py-2 px-4 rounded-t-lg border-b-2 hover:bg-gray-700 hover:text-white capitalize" x-text="tab.replace('_', ' ').replace('autoprogramacion', 'Autoprogramación')"></button>
+</template>
+</div>
+<div class="bg-gray-700/50 rounded-lg p-3 text-sm text-gray-400 mb-8">
+                            PromesaJS<span x-show="currentChat.currentTab === 'typescript'"> / Typescript</span><span x-show="currentChat.currentTab === 'autoprogramacion'"> / Typescript / Autoprogramación</span><span x-show="currentChat.currentTab === 'lisp'"> / Typescript / Autoprogramación / LISP</span>
+</div>
+</div>
+<div x-show="currentChatId === 'js_promise' &amp;&amp; currentChat.currentTab === 'promise'">
+<div class="flex items-start space-x-4 mb-8">
+<div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center font-bold flex-shrink-0">H</div>
+<p class="pt-1">¿Puedes explicarme el concepto de "promesa" en JavaScript y cómo funciona, con un ejemplo práctico?</p>
+</div>
+<div class="flex items-start space-x-4 mb-8">
+<div class="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
+<span class="material-icons text-white">psychology</span>
+</div>
+<div class="flex-1">
+<div class="border-b border-gray-700 pb-6 mb-6">
+<h2 class="text-xl font-semibold mb-3">¿Qué es una Promesa en JavaScript?</h2>
+<p class="text-gray-300 leading-relaxed mb-4">
+                                Una Promesa en JavaScript es un objeto que representa la terminación o el fracaso eventual de una operación asíncrona. Dado que la mayoría de las operaciones en la web son asíncronas (como cargar datos de un servidor), las promesas son fundamentales para manejar estas operaciones de una manera más limpia y legible que los callbacks tradicionales.
+                              </p>
+<div class="flex space-x-2">
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">model_training</span>
+                                    Profundizar
+                                </button>
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">forum</span>
+                                    Hilo
+                                </button>
+</div>
+</div>
+<div>
+<h3 class="text-lg font-semibold mb-3">Estados de una Promesa</h3>
+<p class="text-gray-300 leading-relaxed mb-4">
+                                Una Promesa puede estar en uno de estos tres estados:
+                              </p>
+<div class="flex space-x-2">
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">model_training</span>
+                                    Profundizar
+                                </button>
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">forum</span>
+                                    Hilo
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<template x-if="currentChatId === 'js_promise' &amp;&amp; currentChat.currentTab !== 'promise'">
+<div x-show="currentChat.currentTab !== 'promise'" x-transition="">
+<div class="flex items-start space-x-4 mb-8">
+<div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center font-bold flex-shrink-0">H</div>
+<p class="pt-1 capitalize" x-text="`¿Puedes darme una introducción a ${currentChat.currentTab.replace('autoprogramacion', 'Autoprogramación')}?`"></p>
+</div>
+<div class="flex items-start space-x-4 mb-8">
+<div class="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
+<span class="material-icons text-white">psychology</span>
+</div>
+<div class="flex-1">
+<h2 class="text-xl font-semibold mb-3 capitalize" x-text="`Introducción a ${currentChat.currentTab.replace('autoprogramacion', 'Autoprogramación')}`"></h2>
+<p class="text-gray-300 leading-relaxed mb-4">
+                  Esta es una respuesta básica para el chat de <span x-text="currentChat.currentTab.replace('autoprogramacion', 'Autoprogramación')"></span>. El contenido completo se cargaría aquí.
+                </p>
+<div class="flex space-x-2">
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">model_training</span>
+                                  Profundizar
+                              </button>
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">forum</span>
+                                  Hilo
+                              </button>
+</div>
+</div>
+</div>
+</div>
+</template>
+<div x-show="currentChat.id !== 'js_promise' &amp;&amp; currentChat.tabs.length === 0">
+<div class="flex items-start space-x-4 mb-8">
+<div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center font-bold flex-shrink-0">H</div>
+<p class="pt-1" x-text="`Pregunta sobre ${currentChat.title}`"></p>
+</div>
+<div class="flex items-start space-x-4 mb-8">
+<div class="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0">
+<span class="material-icons text-white">psychology</span>
+</div>
+<div class="flex-1">
+<h2 class="text-xl font-semibold mb-3 capitalize" x-text="`Respuesta sobre ${currentChat.title}`"></h2>
+<p class="text-gray-300 leading-relaxed mb-4">
+                    Esta es una respuesta básica para el chat. El contenido completo se cargaría aquí.
+                  </p>
+<div class="flex space-x-2">
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">model_training</span>
+                                    Profundizar
+                                </button>
+<button class="bg-gray-700 hover:bg-gray-600 text-gray-300 py-1 px-3 rounded-lg flex items-center text-sm">
+<span class="material-icons text-base mr-1">forum</span>
+                                    Hilo
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</template>
+</div>
+</main>
+<footer class="p-6 bg-gray-800">
+<div class="max-w-4xl mx-auto" x-data="{ userInput: '' }">
+<div class="relative">
+<div class="bg-gray-700/50 rounded-xl p-3 flex items-center">
+<button @click="isTtsPreviewOpen = !isTtsPreviewOpen" class="text-gray-400 hover:text-white p-2">
+<span class="material-symbols-outlined">
+edit_note
+</span>
+</button>
+<input @keydown.enter="if(userInput.trim() !== '') { createNewChat(userInput); userInput = ''; }" class="flex-grow bg-transparent focus:outline-none placeholder-gray-400" placeholder="Pregunta lo que quieras" type="text" x-model="userInput"/>
+<button class="text-gray-400 hover:text-white p-2">
+<span class="material-icons">add_circle_outline</span>
+</button>
+<button @click="isInstructionsOpen = !isInstructionsOpen" class="text-gray-400 hover:text-white p-2">
+<span class="material-icons">description</span>
+</button>
+<button @click="if(userInput.trim() !== '') { createNewChat(userInput); userInput = ''; }" class="bg-gray-600 hover:bg-gray-500 text-white p-2 rounded-lg">
+<span class="material-icons">arrow_upward</span>
+</button>
+</div>
+<div class="absolute bottom-full left-0 right-0 mb-2" style="display: none;" x-show="isInstructionsOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:leave="transition ease-in duration-150" x-transition:leave-end="opacity-0 transform -translate-y-2" x-transition:leave-start="opacity-100 transform translate-y-0">
+<div class="bg-gray-700 rounded-lg shadow-lg p-4">
+<label class="block text-sm font-medium text-gray-300 mb-2" for="instructions-file">instructions.md</label>
+<textarea class="w-full bg-gray-800 border border-gray-600 rounded-lg p-2.5 text-white focus:ring-blue-500 focus:border-blue-500" id="instructions-file" placeholder="Personaliza la respuesta del modelo..." rows="5"></textarea>
+</div>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div class="bg-gray-900 border-l border-gray-700 overflow-hidden" style="display: none;" x-show="isGraphOpen" x-transition:enter="transition-width ease-in-out duration-300" x-transition:enter-end="w-96" x-transition:enter-start="w-0" x-transition:leave="transition-width ease-in-out duration-300" x-transition:leave-end="w-0" x-transition:leave-start="w-96">
+<div class="p-4 flex flex-col h-full w-96">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold">Mapa de Conocimiento</h2>
+<button @click="isGraphOpen = false" class="text-gray-400 hover:text-white">
+<span class="material-icons">close</span>
+</button>
+</div>
+<div class="flex-grow bg-gray-800 rounded-lg p-4 flex items-center justify-center">
+<svg class="w-full h-full" viewBox="0 0 200 200">
+<line stroke="#4a5568" stroke-width="1" x1="50" x2="100" y1="50" y2="100"></line>
+<line stroke="#4a5568" stroke-width="1" x1="150" x2="100" y1="50" y2="100"></line>
+<line stroke="#4a5568" stroke-width="1" x1="50" x2="100" y1="150" y2="100"></line>
+<line stroke="#4a5568" stroke-width="1" x1="150" x2="100" y1="150" y2="100"></line>
+<line stroke="#4a5568" stroke-dasharray="2 2" stroke-width="1" x1="50" x2="150" y1="50" y2="150"></line>
+<line stroke="#4a5568" stroke-dasharray="2 2" stroke-width="1" x1="150" x2="50" y1="50" y2="150"></line>
+<line stroke="#4a5568" stroke-width="1" x1="70" x2="50" y1="20" y2="50"></line>
+<line stroke="#4a5568" stroke-width="1" x1="130" x2="150" y1="20" y2="50"></line>
+<line stroke="#4a5568" stroke-width="1" x1="70" x2="50" y1="180" y2="150"></line>
+<line stroke="#4a5568" stroke-width="1" x1="130" x2="150" y1="180" y2="150"></line>
+<circle cx="100" cy="100" fill="#8B5CF6" r="12"></circle>
+<text fill="white" font-family="Roboto, sans-serif" font-size="6" text-anchor="middle" x="100" y="104">Promesa JS</text>
+<circle cx="50" cy="50" fill="#3B82F6" r="10"></circle>
+<text fill="white" font-family="Roboto, sans-serif" font-size="5" text-anchor="middle" x="50" y="54">Asincronía</text>
+<circle cx="150" cy="50" fill="#10B981" r="8"></circle>
+<text fill="white" font-family="Roboto, sans-serif" font-size="4" text-anchor="middle" x="150" y="54">Callbacks</text>
+<circle cx="50" cy="150" fill="#F97316" r="9"></circle>
+<text fill="white" font-family="Roboto, sans-serif" font-size="5" text-anchor="middle" x="50" y="154">Typescript</text>
+<circle cx="150" cy="150" fill="#EC4899" r="10"></circle>
+<text fill="white" font-family="Roboto, sans-serif" font-size="5" text-anchor="middle" x="150" y="154">LISP</text>
+<circle cx="70" cy="20" fill="#6B7280" r="7"></circle>
+<text fill="white" font-family="Roboto, sans-serif" font-size="4" text-anchor="middle" x="70" y="23">Zóhar</text>
+<circle cx="130" cy="20" fill="#6B7280" r="6"></circle>
+<text fill="white" font-family="Roboto, sans-serif" font-size="3" text-anchor="middle" x="130" y="23">Energía</text>
+<circle cx="70" cy="180" fill="#6B7280" r="8"></circle>
+<text fill="white" font-family="Roboto, sans-serif" font-size="4" text-anchor="middle" x="70" y="183">Vibración</text>
+<circle cx="130" cy="180" fill="#6B7280" r="9"></circle>
+<text fill="white" font-family="Roboto, sans-serif" font-size="4" text-anchor="middle" x="130" y="183">Rarámuri</text>
+</svg>
+</div>
+</div>
+</div>
+<div @click.away="isModelModalOpen = false" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;" x-show="isModelModalOpen">
+<div class="bg-gray-800 rounded-lg p-8 w-full max-w-md">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-bold">OpenRouter Model</h2>
+<button @click="isModelModalOpen = false" class="text-gray-400 hover:text-white">
+<span class="material-icons">close</span>
+</button>
+</div>
+<p class="text-gray-400 mb-6">
+            Ingresa tu clave de API de OpenRouter para usar modelos personalizados.
+        </p>
+<div class="mb-4">
+<label class="block text-sm font-medium text-gray-300 mb-2" for="apiKey">Clave de API</label>
+<input class="bg-gray-700 border border-gray-600 rounded-lg w-full p-2.5 text-white focus:ring-blue-500 focus:border-blue-500" id="apiKey" placeholder="sk-or-..." type="password"/>
+</div>
+<div class="flex justify-end space-x-4">
+<button @click="isModelModalOpen = false" class="py-2 px-4 bg-gray-600 hover:bg-gray-700 rounded-lg">
+                Cancelar
+            </button>
+<button @click="isModelModalOpen = false" class="py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded-lg">
+                Guardar
+            </button>
+</div>
+</div>
+</div>
+<div @click.away="isTtsPreviewOpen = false" class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center" style="display: none;" x-show="isTtsPreviewOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-end="opacity-100" x-transition:enter-start="opacity-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-end="opacity-0" x-transition:leave-start="opacity-100">
+<div @click.away="isAudioPlaying = false" class="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-2xl relative" x-data="{ isAudioPaused: true }">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-lg font-semibold text-white">Vista previa para TTS</h3>
+<button @click="isTtsPreviewOpen = false" class="text-gray-400 hover:text-white">
+<span class="material-icons">close</span>
+</button>
+</div>
+<div class="relative">
+<div :class="{'blur-sm': isAudioPlaying}" class="text-gray-300 leading-relaxed transition-all duration-300">
+            ¿Qué es una Promesa en JavaScript?
+            Una Promesa en JavaScript es un objeto que representa la terminación o el fracaso eventual de una operación asíncrona. Dado que la mayoría de las operaciones en la web son asíncronas (como cargar datos de un servidor), las promesas son fundamentales para manejar estas operaciones de una manera más limpia y legible que los callbacks tradicionales.
+            Estados de una Promesa
+            Una Promesa puede estar en uno de estos tres estados: pendiente, cumplida, o rechazada.
+        </div>
+<div class="absolute inset-0 flex items-center justify-center" style="display: none;" x-show="isAudioPlaying" x-transition:enter="transition ease-out duration-300" x-transition:enter-end="opacity-100" x-transition:enter-start="opacity-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-end="opacity-0" x-transition:leave-start="opacity-100">
+<div @click.stop="" class="bg-gray-900 bg-opacity-80 rounded-lg p-4 w-full max-w-md mx-auto">
+<div class="flex items-center justify-center space-x-4">
+<button class="text-white hover:text-gray-300 p-2"><span class="material-symbols-outlined">replay</span></button>
+<button class="text-white hover:text-gray-300 p-2"><span class="material-symbols-outlined">replay_5</span></button>
+<button @click="isAudioPaused = !isAudioPaused" class="text-white bg-blue-600 hover:bg-blue-700 rounded-full p-3">
+<span class="material-symbols-outlined" x-text="isAudioPaused ? 'play_arrow' : 'pause'"></span>
+</button>
+<button class="text-white hover:text-gray-300 p-2"><span class="material-symbols-outlined">forward_5</span></button>
+<button @click="isDownloading = true; setTimeout(() =&gt; isDownloading = false, 3000)" class="text-white hover:text-gray-300 p-2"><span class="material-symbols-outlined">download</span></button>
+</div>
+<div class="w-full bg-gray-600 rounded-full h-1.5 mt-4">
+<div class="bg-blue-500 h-1.5 rounded-full" style="width: 45%"></div>
+</div>
+</div>
+</div>
+</div>
+<button @click="isAudioPlaying = true; isAudioPaused = false" class="absolute bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-lg flex items-center justify-center" x-show="!isAudioPlaying">
+<span class="material-symbols-outlined">hearing</span>
+</button>
+<div class="absolute bottom-20 right-6 bg-gray-700 text-white text-sm rounded-lg px-4 py-2 shadow-lg" style="display: none;" x-show="isDownloading" x-transition:enter="transition ease-out duration-300" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:enter-start="opacity-0 transform translate-y-2" x-transition:leave="transition ease-in duration-200" x-transition:leave-end="opacity-0 transform translate-y-2" x-transition:leave-start="opacity-100 transform translate-y-0">
+            Descargando... audio_tts.mp3 (2.5 MB)
+        </div>
+</div>
+</div>
+</div>
+</body></html>
