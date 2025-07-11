@@ -13,7 +13,7 @@
 </script>
 
 <main>
-  <h1>Svelte Knowledge Chatbot</h1>
+  <h1>Galaxy Think</h1>
   <div class="container">
     <div class="panel-wrapper">
       <ControlPanel />
